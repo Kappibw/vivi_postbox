@@ -1,0 +1,10 @@
+[Unit]
+Description=HTTP Checker Service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/env python3 /Users/kappi/git/vivi_postbox/scripts/http_checker.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
