@@ -3,7 +3,8 @@ Description=HTTP Checker Service
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/env python3 /Users/kappi/git/vivi_postbox/scripts/http_checker.py
+WorkingDirectory=/home/pi/git/vivi_postbox
+ExecStart=/usr/bin/env python3 -m scripts.http_checker
 Restart=always
 
 [Install]

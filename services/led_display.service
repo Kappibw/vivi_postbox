@@ -1,10 +1,10 @@
 [Unit]
-Description=WiFi Manager Service
+Description=LED Display Service
 After=network.target
 
 [Service]
 WorkingDirectory=/home/pi/git/vivi_postbox
-ExecStart=/usr/bin/env python3 -m scripts.wifi_manager
+ExecStart=/usr/bin/env python3 -m scripts.led_display
 Restart=always
 
 [Install]
