@@ -6,7 +6,7 @@
 # Set the directory where captive portal config files are located (relative to this script)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Copy hostapd and dnsmasq config files to appropriate locations (adjust paths as needed)
+# Copy hostapd and dnsmasq config files to appropriate locations
 cp "${SCRIPT_DIR}/hostapd.conf" /etc/hostapd/hostapd.conf
 cp "${SCRIPT_DIR}/dnsmasq.conf" /etc/dnsmasq.conf
 

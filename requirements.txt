@@ -1,3 +1,5 @@
-rpi_ws281x
+# Only for Raspberry Pi
+rpi_ws281x; sys_platform == "linux"
 requests
 gpiozero
+flask

@@ -6,9 +6,11 @@ LED Display Script
 - Indicates when a pending MP3 file is ready to be played.
 """
 
+
 def main():
- print("Starting LED Display...")
- # TODO: Implement LED ring control logic
+    print("Starting LED Display...")
+    # TODO: Implement LED ring control logic
+
 
 if __name__ == "__main__":
- main()
+    main()
