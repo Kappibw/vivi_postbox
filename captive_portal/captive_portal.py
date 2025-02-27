@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+the#!/usr/bin/env python3
 """
 Captive Portal Web Server
 
