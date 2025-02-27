@@ -1,0 +1,8 @@
+ * Serving Flask app 'captive_portal'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:80
+ * Running on http://127.0.0.1:80
+Press CTRL+C to quit
+192.168.4.37 - - [27/Feb/2025 14:01:05] "POST /chat HTTP/1.1" 200 -
