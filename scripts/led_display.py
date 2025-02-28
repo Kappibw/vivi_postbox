@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """
-LED Display Script
+LED Display Script with Full-Cycle Pulsing and Smooth Interrupt Transitions
 
 - Reads the state from the shared state_management module.
 - If no pending message: turns LEDs off.
-- If pending message exists: displays a gentle pulsing, multicolored light.
-- If a message is playing: displays a more active pulsing pattern.
+- If a pending message exists: displays a gentle pulsing, multicolored light (256 steps).
+- If a message is playing: displays a more active pulsing pattern (fewer, bigger steps).
+- If a pulse cycle is interrupted, the current LED colors smoothly fade out.
 """
 
 import time
 import math
-from state_management.state_management import read_state
+import random
+from state_management.state_management import read_state, write_state
 
 # Try to import the rpi_ws281x library. If not available (e.g. on macOS), define dummy functions.
 try:
@@ -36,9 +38,9 @@ except ImportError:
 
 
 # LED configuration
-LED_COUNT = 16  # Number of LED pixels.
-LED_PIN = 18  # GPIO pin connected to the pixels (must support PWM!)
-LED_BRIGHTNESS = 50  # Brightness (0 to 255)
+LED_COUNT = 12  # Number of LED pixels.
+LED_PIN = 12    # GPIO pin connected to the pixels (must support PWM!)
+LED_BRIGHTNESS = 200  # Brightness (0 to 255)
 
 # Initialize the LED strip
 strip = PixelStrip(LED_COUNT, LED_PIN, brightness=LED_BRIGHTNESS)
@@ -52,69 +54,190 @@ def led_off():
     strip.show()
 
 
+def fade_out(current_colors, steps=10, delay=0.02):
+    """
+    Gradually dim the current LED colors to off.
+    
+    Args:
+        current_colors (list): List of (r, g, b) tuples representing the current colors.
+        steps (int): Number of steps to use in the fade.
+        delay (float): Delay (in seconds) between fade steps.
+    """
+    for step in range(steps):
+        factor = (steps - step - 1) / (steps - 1)  # factor goes from 1.0 to 0.0
+        for i, (r, g, b) in enumerate(current_colors):
+            new_r = int(r * factor)
+            new_g = int(g * factor)
+            new_b = int(b * factor)
+            strip.setPixelColor(i, Color(new_r, new_g, new_b))
+        strip.show()
+        time.sleep(delay)
+    led_off()
+
+
 def gentle_pulse():
     """
-    Display a gentle pulsing multicolored light.
-    The function runs in a cycle but checks the state to allow interruption if needed.
+    Displays a gentle chasing color effect on a 12 LED ring.
+    The hue (pink to purple to pink) appears to chase around the ring,
+    while all LEDs pulse in unison from dim (0) to bright (255) and back to dim,
+    over 256 steps.
     """
-    for j in range(256):  # One cycle of the sine wave
-        # Calculate a brightness value that oscillates between 0 and 255
-        brightness = int((math.sin(j * math.pi / 256) + 1) * 127.5)
+    for j in range(256):
+        # Global brightness for all LEDs using a sine wave (0->max->0)
+        angle = j * (2 * math.pi / 256) - math.pi/2  # maps j to [-pi/2, 3pi/2]
+        brightness = int((math.sin(angle) + 1) * 127.5)  # brightness goes from 0 to 255 to 0
+        
+        current_colors = []
         for i in range(LED_COUNT):
-            # Create a color pattern that shifts per LED: cycle through red, green, blue
-            if i % 3 == 0:
-                r, g, b = brightness, 0, 0
-            elif i % 3 == 1:
-                r, g, b = 0, brightness, 0
-            else:
-                r, g, b = 0, 0, brightness
-            strip.setPixelColor(i, Color(r, g, b))
+            # Offset each LED's color phase to create a chasing effect
+            offset = int((256 / LED_COUNT) * i)
+            phase = (j + offset) % 256
+            
+            # Interpolate blue channel: pink (blue = 0.5*brightness) to purple (blue = brightness)
+            t = (math.sin(phase * (2 * math.pi / 256)) + 1) / 2
+            red = brightness
+            green = 0
+            blue = int(brightness * (0.5 + 0.5 * t))
+            current_colors.append((red, green, blue))
+            strip.setPixelColor(i, Color(red, green, blue))
+        
         strip.show()
         time.sleep(0.02)
-        # Check state frequently; exit if no longer pending or if playing state has changed
+        
+        # Check for state changes; if detected, fade out current colors and exit cycle
         state = read_state()
         if not state or not state.get("message_pending"):
+            fade_out(current_colors)
             return
         if state.get("playing"):
+            fade_out(current_colors)
             return
 
 
 def active_pulse():
     """
-    Display a more active pulsing pattern while the message is playing.
-    Uses a faster pulsation effect.
+    Displays a visualizer-style active pattern while a message is playing.
+    Each cycle randomly either does:
+      - A "pulse": the LEDs smoothly fade in and out over a random duration between 0.1 and 0.5 seconds.
+      - A "blink": the LEDs instantly turn on (full brightness) for a random duration (0.1-0.5 sec) then off.
+    Random base colors are chosen for each cycle.
+    The function runs until the 'playing' state is no longer True.
     """
-    for j in range(256):
-        # Faster sine wave oscillation for a more vigorous effect
-        brightness = int((math.sin(j * math.pi / 128) + 1) * 127.5)
-        for i in range(LED_COUNT):
-            # For active state, we'll use a constant color (e.g., blue) for all LEDs.
-            r, g, b = 0, 0, brightness
-            strip.setPixelColor(i, Color(r, g, b))
-        strip.show()
-        time.sleep(0.01)
+    while True:
+        # Check current state; if not playing, fade out and exit.
         state = read_state()
-        # Exit the active pulse cycle if 'playing' flag is cleared
         if not state or not state.get("playing"):
+            fade_out([(0, 0, 0)] * LED_COUNT)
             return
+        
+        # Randomly choose between a pulse or a blink.
+        mode = random.choice(['pulse', 'blink'])
+        
+        # Generate random base colors for each LED.
+        base_colors = []
+        for i in range(LED_COUNT):
+            r = random.randint(0, 255)
+            g = random.randint(0, 255)
+            b = random.randint(0, 255)
+            base_colors.append((r, g, b))
+        
+        if mode == 'pulse':
+            # Pulse mode: smooth fade in then fade out.
+            duration = random.uniform(0.1, 0.5)  # total pulse duration
+            steps = 30  # fixed number of steps for smooth transition
+            delay = duration / steps
+            
+            # For a smooth pulse, we use sine modulation from 0 to pi (0 -> 1 -> 0).
+            current_colors = []
+            for j in range(steps + 1):
+                angle = j * math.pi / steps  # angle in [0, pi]
+                brightness_factor = math.sin(angle)
+                
+                current_colors = []
+                for i in range(LED_COUNT):
+                    r, g, b = base_colors[i]
+                    new_r = int(r * brightness_factor)
+                    new_g = int(g * brightness_factor)
+                    new_b = int(b * brightness_factor)
+                    current_colors.append((new_r, new_g, new_b))
+                    strip.setPixelColor(i, Color(new_r, new_g, new_b))
+                strip.show()
+                time.sleep(delay)
+                
+                # Check for state changes during the pulse cycle.
+                state = read_state()
+                if not state or not state.get("playing"):
+                    fade_out(current_colors)
+                    return
+        else:
+            # Blink mode: instant on full brightness for a short random duration, then off.
+            on_duration = random.uniform(0.1, 0.5)
+            # Turn all LEDs to their base (full brightness) color.
+            for i in range(LED_COUNT):
+                r, g, b = base_colors[i]
+                strip.setPixelColor(i, Color(r, g, b))
+            strip.show()
+            time.sleep(on_duration)
+            
+            # Turn off LEDs.
+            for i in range(LED_COUNT):
+                strip.setPixelColor(i, Color(0, 0, 0))
+            strip.show()
+            # Short off interval before the next cycle.
+            time.sleep(0.05)
 
+def wifi_not_connected():
+    """
+    Sets all LEDs to green at maximum brightness (0,255,0) for one second, then returns.
+    """
+    for i in range(LED_COUNT):
+        strip.setPixelColor(i, Color(0, 255, 0))
+    strip.show()
+    time.sleep(1)
+
+def orange_blink(current_state):
+    """
+    Blinks all LEDs bright orange three times within 0.8 seconds.
+    Each blink is on for 0.2 seconds, with 0.1 seconds off between blinks.
+    """
+    orange = Color(255, 165, 0)  # Bright orange
+    for i in range(3):
+        # Turn all LEDs orange.
+        for j in range(LED_COUNT):
+            strip.setPixelColor(j, orange)
+        strip.show()
+        time.sleep(0.1)
+        
+        # Turn LEDs off between blinks (except after the last blink)
+        for j in range(LED_COUNT):
+            strip.setPixelColor(j, Color(0, 0, 0))
+        strip.show()
+        time.sleep(0.1)
+    current_state["user_input"] = False
+    write_state(current_state)
 
 def main():
     """
-    Main loop: periodically check the shared state and update the LED pattern accordingly.
+    Main loop: periodically checks the shared state and updates the LED pattern accordingly.
     """
     while True:
         state = read_state()
-        if not state or not state.get("message_pending"):
-            # No pending messages: ensure LEDs are off
+        if not state:
             led_off()
-            time.sleep(1)
-        elif state.get("playing"):
-            # If playing, show an active pulse pattern
+            time.sleep(0.5)
+            continue
+        if state.get("wifi_not_connected"):
+            wifi_not_connected()
+            continue
+        if not state.get("message_pending") and state.get("user_input"):
+            orange_blink(state)
+        elif state.get("message_pending") and state.get("playing"):
             active_pulse()
-        else:
-            # Otherwise, if there's a pending message, show a gentle pulse pattern
+        elif state.get("message_pending"):
             gentle_pulse()
+        else:
+            led_off()
+            time.sleep(0.5)
 
 
 if __name__ == "__main__":

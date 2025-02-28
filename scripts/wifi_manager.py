@@ -58,13 +58,11 @@ def start_captive_portal():
 def stop_captive_portal():
     """
     Stop the captive portal services.
-    This function stops hostapd and dnsmasq, and kills the captive portal web server.
+    This function kills the captive portal web server.
     """
-    print("Stopping captive portal mode...")
+    print("Stopping captive portal server...")
     try:
-        subprocess.run(["sudo", "systemctl", "stop", "hostapd"], check=True)
-        subprocess.run(["sudo", "systemctl", "stop", "dnsmasq"], check=True)
-        # Kill the captive portal web server process (adjust process matching as needed)
+        # Kill the captive portal web server process
         subprocess.run(["pkill", "-f", "captive_portal.py"])
     except subprocess.CalledProcessError as e:
         print("Failed to stop captive portal:", e)

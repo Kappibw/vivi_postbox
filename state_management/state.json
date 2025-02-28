@@ -1,1 +1,6 @@
-{}
+{
+    "wifi_not_connected": false,
+    "message_pending": true,
+    "playing": true,
+    "user_input": false
+}
