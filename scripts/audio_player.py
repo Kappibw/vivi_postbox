@@ -16,7 +16,7 @@ from state_management.state_management import read_state, write_state
 
 # Configure the GPIO pin connected to the Hall Effect sensor.
 HALL_PIN = 17
-hall_sensor = Button(HALL_PIN, pull_up=True)
+# hall_sensor = Button(HALL_PIN, pull_up=True)
 
 
 # Define a helper to play the MP3 using a command-line player.
@@ -37,7 +37,8 @@ def main():
         # Check if there is a pending message and we are not already playing.
         if state and state.get("message_pending") and not state.get("playing"):
             # Wait for the sensor to be triggered.
-            if hall_sensor.is_pressed:
+            # if hall_sensor.is_pressed:
+            if True:
                 print("Hall sensor triggered.")
                 mp3_path = state.get("mp3_path")
                 if not mp3_path:

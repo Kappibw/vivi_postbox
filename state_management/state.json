@@ -1,6 +1,7 @@
 {
     "wifi_not_connected": false,
     "message_pending": true,
-    "playing": true,
-    "user_input": false
+    "playing": false,
+    "user_input": false,
+    "mp3_path": "/home/pi/git/vivi_postbox/test_cello.mp3"
 }
