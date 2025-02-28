@@ -4,8 +4,12 @@ After=network.target
 
 [Service]
 WorkingDirectory=/home/pi/git/vivi_postbox
-ExecStart=/usr/bin/env python3 -m scripts.audio_player
+User=root
+ExecStart=/home/pi/git/vivi_postbox/venv/bin/python3 -u -m scripts.audio_player
 Restart=always
+Environment="PYTHONUNBUFFERED=1"
+Environment="PATH=/home/pi/git/vivi_postbox/venv/bin:/home/pi/.vscode-server/cli/servers/Stable-e54c774e0add60467559eb0d1e229c6452cf8447/server/bin/remote-cli:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games"
+Environment="VIRTUAL_ENV=/home/pi/git/vivi_postbox/venv"
 
 [Install]
 WantedBy=multi-user.target

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3 -u
 """
 Audio Player Script
 
@@ -13,6 +13,7 @@ import time
 import subprocess
 from gpiozero import Button
 from state_management.state_management import read_state, write_state
+import sys
 
 # Configure the GPIO pin connected to the Hall Effect sensor.
 HALL_PIN = 17
@@ -35,9 +36,9 @@ def main():
     print("Audio player started. Waiting for pending message and sensor trigger.")
     while True:
         state = read_state()
+        sys.stdout.flush()
         # Check if there is a pending message and we are not already playing.
         if state and state.get("message_pending") and not state.get("playing"):
-            print("Ready to play, waiting for trigger.")
             # Wait for the sensor to be triggered.
             if hall_sensor.is_pressed:
                 print("Hall sensor triggered.\n\n")

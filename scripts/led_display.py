@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3 -u
 """
 LED Display Script with Full-Cycle Pulsing and Smooth Interrupt Transitions
 
@@ -13,12 +13,16 @@ import time
 import math
 import random
 from state_management.state_management import read_state, write_state
+import sys
+
+sys.path.append("/home/pi/git/vivi_postbox/venv/lib/python3.11/site-packages")
 
 # Try to import the rpi_ws281x library. If not available (e.g. on macOS), define dummy functions.
 try:
     from rpi_ws281x import PixelStrip, Color
-except ImportError:
-    print("rpi_ws281x library not found. Using dummy LED functions for development.")
+except Exception as e:
+    print(f"FAILED to import rpi_ws281x: {type(e).__name__}: {e}")
+    print("Using dummy LED functions...")
 
     class PixelStrip:
         def __init__(self, num, pin, freq_hz=800000, dma=10, invert=False, brightness=255, channel=0):
@@ -238,6 +242,7 @@ def main():
         else:
             led_off()
             time.sleep(0.5)
+        sys.stdout.flush()
 
 
 if __name__ == "__main__":
