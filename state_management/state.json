@@ -3,5 +3,6 @@
     "message_pending": true,
     "playing": false,
     "user_input": false,
-    "mp3_path": "/home/pi/git/vivi_postbox/test_cello.mp3"
+    "mp3_path": "/home/pi/mp3_downloads/audio_1739537223.0.mp3",
+    "message_listened": true
 }
