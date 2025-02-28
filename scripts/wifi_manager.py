@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3 -u
 """
 WiFi Manager with Captive Portal Activation
 
@@ -13,13 +13,15 @@ the script stops the captive portal mode.
 import os
 import subprocess
 import time
+import sys
+from state_management.state_management import read_state, write_state
 
 # The host to ping to check connectivity (Google DNS is commonly used)
 PING_HOST = "8.8.8.8"
 # How many seconds to wait between checks
-CHECK_INTERVAL = 30
+CHECK_INTERVAL = 10
 # How many seconds of consecutive connectivity loss trigger captive portal mode
-TIMEOUT = 300
+TIMEOUT = 30
 
 # Calculate the relative path to the captive portal install script
 CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -73,7 +75,10 @@ def main():
     portal_active = False
 
     while True:
+        state = read_state()
         if is_connected():
+            state["wifi_not_connected"] = False
+            write_state(state)
             print("Internet connectivity is present.")
             disconnect_time = 0
             if portal_active:
@@ -81,12 +86,15 @@ def main():
                 stop_captive_portal()
                 portal_active = False
         else:
+            state["wifi_not_connected"] = True
+            write_state(state)
             disconnect_time += CHECK_INTERVAL
             print(f"Connectivity lost for {disconnect_time} seconds.")
             if disconnect_time >= TIMEOUT and not portal_active:
                 start_captive_portal()
                 portal_active = True
         time.sleep(CHECK_INTERVAL)
+        sys.stdout.flush()
 
 
 if __name__ == "__main__":

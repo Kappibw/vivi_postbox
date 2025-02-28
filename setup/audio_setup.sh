@@ -60,9 +60,12 @@ fi
 ASOUND_CONF="/etc/asound.conf"
 sudo tee "$ASOUND_CONF" > /dev/null <<EOF
 pcm.!default {
-    type plug
+    type dmix
+    ipc_key 1024
     slave {
         pcm "hw:2,0"
+        # Make sure these match what your I2S amp supports
+        # MAX98357 typically works with 44.1k or 48k:
         rate 44100
         format S16_LE
         channels 2

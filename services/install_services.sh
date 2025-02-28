@@ -14,7 +14,7 @@ SERVICE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET_DIR="/etc/systemd/system"
 
 # List service files in the current directory (modify if needed)
-SERVICE_FILES=("wifi_manager.service" "http_checker.service" "led_display.service", "audio_player.service")
+SERVICE_FILES=("wifi_manager.service" "http_checker.service" "led_display.servicee", "audio_player.service")
 
 echo "Installing systemd service files..."
 

@@ -16,18 +16,19 @@ from state_management.state_management import read_state, write_state
 
 # Configure the GPIO pin connected to the Hall Effect sensor.
 HALL_PIN = 17
-# hall_sensor = Button(HALL_PIN, pull_up=True)
+hall_sensor = Button(HALL_PIN, pull_up=True)
 
-
-# Define a helper to play the MP3 using a command-line player.
-# Ensure that 'mpg123' is installed on your Raspberry Pi:
-#   sudo apt-get install mpg123
 def play_mp3(filepath):
+    print(f"Playing MP3: {filepath}")
+    process = subprocess.Popen(["mpg321", "-o", "alsa", "-a", "plughw:2,0", "-g", "200", filepath])
     try:
-        print(f"Playing MP3: {filepath}")
-        subprocess.run(["mpg123", filepath], check=True)
-    except subprocess.CalledProcessError as e:
-        print("Error playing mp3:", e)
+        # Wait for mpg321 to finish normally
+        process.wait()
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt caught; terminating mpg321.")
+        process.terminate()  # Send SIGTERM
+        process.wait()       # Wait for it to exit
+        raise  # Re-raise to let the top-level code handle clean shutdown
 
 
 def main():
@@ -36,10 +37,10 @@ def main():
         state = read_state()
         # Check if there is a pending message and we are not already playing.
         if state and state.get("message_pending") and not state.get("playing"):
+            print("Ready to play, waiting for trigger.")
             # Wait for the sensor to be triggered.
-            # if hall_sensor.is_pressed:
-            if True:
-                print("Hall sensor triggered.")
+            if hall_sensor.is_pressed:
+                print("Hall sensor triggered.\n\n")
                 mp3_path = state.get("mp3_path")
                 if not mp3_path:
                     print("No MP3 filepath found in state; skipping playback.")
