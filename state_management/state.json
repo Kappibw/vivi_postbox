@@ -1,8 +1,9 @@
 {
     "wifi_not_connected": false,
-    "message_pending": true,
+    "message_pending": false,
     "playing": false,
     "user_input": false,
-    "mp3_path": "/home/pi/mp3_downloads/audio_1739537223.0.mp3",
-    "message_listened": true
+    "mp3_path": "/home/pi/mp3_downloads/audio_1741066143.0.mp3",
+    "message_listened": false,
+    "message_id": 39
 }

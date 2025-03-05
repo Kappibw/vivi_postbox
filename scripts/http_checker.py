@@ -54,8 +54,9 @@ def poll_endpoint():
 
     msg_type = data.get("type")
     mp3_url = data.get("mp3_url")
+    msg_id = data.get("id")
     
-    if msg_type == "audio" and mp3_url:
+    if mp3_url:
         # Download the MP3
         local_mp3_path = download_mp3(mp3_url)
         if local_mp3_path:
@@ -63,10 +64,11 @@ def poll_endpoint():
             current_state = read_state()
             current_state["message_pending"] = True
             current_state["mp3_path"] = local_mp3_path
+            current_state["message_id"] = msg_id
             write_state(current_state)
             print("State updated: message pending set to True and mp3 path saved.")
     else:
-        print(f"Received non-audio message or missing mp3_url. Type: {msg_type}")
+        print(f"Received non-audio message or missing mp3_url. Type: {msg_type}, id: {msg_id}")
 
 def mark_message_listened():
     current_state = read_state()
@@ -77,6 +79,19 @@ def mark_message_listened():
         print("No message ID found")
         return
     print(f"Marking message {message_id} listened")
+    
+    # Build the URL for the DELETE request
+    url = f"https://api.thinkkappi.com/vivi/delete_post/{message_id}"
+    
+    try:
+        response = requests.delete(url)
+        if response.status_code == 200:
+            print(f"Message {message_id} deleted successfully.")
+        else:
+            print(f"Failed to delete message {message_id}: {response.text}")
+    except Exception as e:
+        print(f"Error calling delete endpoint: {e}")
+
 
 def main():
     print("Starting HTTP Checker...")

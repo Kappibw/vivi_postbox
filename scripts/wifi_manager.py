@@ -86,11 +86,11 @@ def main():
                 stop_captive_portal()
                 portal_active = False
         else:
-            state["wifi_not_connected"] = True
-            write_state(state)
             disconnect_time += CHECK_INTERVAL
             print(f"Connectivity lost for {disconnect_time} seconds.")
             if disconnect_time >= TIMEOUT and not portal_active:
+                state["wifi_not_connected"] = True
+                write_state(state)
                 start_captive_portal()
                 portal_active = True
         time.sleep(CHECK_INTERVAL)
