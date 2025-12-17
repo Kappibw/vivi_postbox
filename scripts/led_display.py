@@ -203,10 +203,10 @@ def wifi_not_connected():
 
 def nightlight():
     """
-    Sets all LEDs to amber (255, 191, 0) to act as a nightlight.
+    Sets all LEDs to amber (255, 242, 157) to act as a nightlight.
     """
     for i in range(LED_COUNT):
-        strip.setPixelColor(i, Color(255, 191, 0))
+        strip.setPixelColor(i, Color(255, 242, 157))
     strip.show()
     time.sleep(1)
 
