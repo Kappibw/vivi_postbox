@@ -14,9 +14,10 @@ import sys
 
 # Configuration
 POLL_INTERVAL_SECONDS = 10  # how often to poll the endpoint
-PENDING_SLEEP_SECONDS = 1 # how long to wait for pending message to be cleared.
+PENDING_SLEEP_SECONDS = 1  # how long to wait for pending message to be cleared.
 GET_POST_ENDPOINT = "https://api.thinkkappi.com/vivi/get_post"
 DOWNLOAD_DIR = "/home/pi/mp3_downloads"  # change as needed
+
 
 def download_mp3(mp3_url):
     """Downloads the MP3 file from the given URL and returns the local file path."""
@@ -24,7 +25,7 @@ def download_mp3(mp3_url):
         # Create download directory if it doesn't exist
         if not os.path.exists(DOWNLOAD_DIR):
             os.makedirs(DOWNLOAD_DIR)
-        
+
         # Use the last part of the URL as the filename
         filename = os.path.basename(mp3_url)
         local_path = os.path.join(DOWNLOAD_DIR, filename)
@@ -42,6 +43,7 @@ def download_mp3(mp3_url):
         print(f"Failed to download MP3 from {mp3_url}: {e}")
         return None
 
+
 def poll_endpoint():
     """Polls the HTTP endpoint and processes the response."""
     try:
@@ -55,7 +57,7 @@ def poll_endpoint():
     msg_type = data.get("type")
     mp3_url = data.get("mp3_url")
     msg_id = data.get("id")
-    
+
     if mp3_url:
         # Download the MP3
         local_mp3_path = download_mp3(mp3_url)
@@ -70,27 +72,32 @@ def poll_endpoint():
     else:
         print(f"Received non-audio message or missing mp3_url. Type: {msg_type}, id: {msg_id}")
 
+
 def mark_message_listened():
     current_state = read_state()
     message_id = current_state.get("message_id", "")
+
+    # We reset the flag locally, the audio player sets this to True when playback is done.
     current_state["message_listened"] = False
     write_state(current_state)
+
     if not message_id:
-        print("No message ID found")
+        print("No message ID found to mark as listened.")
         return
-    print(f"Marking message {message_id} listened")
-    
-    # Build the URL for the DELETE request
-    url = f"https://api.thinkkappi.com/vivi/delete_post/{message_id}"
-    
+
+    print(f"Marking message {message_id} as listened in the online DB.")
+    url = f"https://api.thinkkappi.com/vivi/listen_post/{message_id}"
+
     try:
         response = requests.delete(url)
         if response.status_code == 200:
-            print(f"Message {message_id} deleted successfully.")
+            print(f"Success: Message {message_id} marked as listened. Telegram notification sent.")
         else:
-            print(f"Failed to delete message {message_id}: {response.text}")
+            print(f"Failed to mark message {message_id}: Status {response.status_code}")
+            print(f"Response: {response.text}")
+
     except Exception as e:
-        print(f"Error calling delete endpoint: {e}")
+        print(f"Network error calling listen endpoint: {e}")
 
 
 def main():
@@ -107,6 +114,7 @@ def main():
             mark_message_listened()
         poll_endpoint()
         time.sleep(POLL_INTERVAL_SECONDS)
+
 
 if __name__ == "__main__":
     main()
