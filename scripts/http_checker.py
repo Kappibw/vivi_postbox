@@ -17,6 +17,7 @@ POLL_INTERVAL_SECONDS = 10  # how often to poll the endpoint
 PENDING_SLEEP_SECONDS = 1  # how long to wait for pending message to be cleared.
 GET_POST_ENDPOINT = "https://api.thinkkappi.com/vivi/get_post"
 DOWNLOAD_DIR = "/home/pi/mp3_downloads"  # change as needed
+NIGHTLIGHT_ENDPOINT = "https://api.thinkkappi.com/vivi/nightlight"
 
 
 def download_mp3(mp3_url):
@@ -100,11 +101,45 @@ def mark_message_listened():
         print(f"Network error calling listen endpoint: {e}")
 
 
+def check_for_nightlight():
+    """Polls the nightlight endpoint and updates the local state file."""
+    try:
+        response = requests.get(NIGHTLIGHT_ENDPOINT)
+        response.raise_for_status()
+        data = response.json()
+
+        # Get the boolean from the API response: {"nightlight": true/false}
+        api_status = data.get("nightlight", False)
+
+        # 1. Read current state
+        current_state = read_state()
+
+        # 2. Update the specific nightlight key
+        current_state["nightlight_on"] = api_status
+
+        # 3. Write back to the state file
+        write_state(current_state)
+
+        if api_status:
+            print("Nightlight on: True")
+        else:
+            print("Nightlight on: False")
+
+    except Exception as e:
+        print(f"Error checking nightlight API: {e}")
+
+
 def main():
     print("Starting HTTP Checker...")
     while True:
         sys.stdout.flush()
+        check_for_nightlight()
         current_state = read_state()
+        nightlight_on = current_state.get("nightlight_on", False)
+        if nightlight_on:
+            print("Nightlight is ON - skipping message polling.")
+            time.sleep(POLL_INTERVAL_SECONDS)
+            continue
         pending_message = current_state.get("message_pending", False)
         if pending_message:
             time.sleep(PENDING_SLEEP_SECONDS)

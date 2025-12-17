@@ -43,7 +43,7 @@ except Exception as e:
 
 # LED configuration
 LED_COUNT = 12  # Number of LED pixels.
-LED_PIN = 12    # GPIO pin connected to the pixels (must support PWM!)
+LED_PIN = 12  # GPIO pin connected to the pixels (must support PWM!)
 LED_BRIGHTNESS = 200  # Brightness (0 to 255)
 
 # Initialize the LED strip
@@ -61,7 +61,7 @@ def led_off():
 def fade_out(current_colors, steps=10, delay=0.02):
     """
     Gradually dim the current LED colors to off.
-    
+
     Args:
         current_colors (list): List of (r, g, b) tuples representing the current colors.
         steps (int): Number of steps to use in the fade.
@@ -88,15 +88,15 @@ def gentle_pulse():
     """
     for j in range(256):
         # Global brightness for all LEDs using a sine wave (0->max->0)
-        angle = j * (2 * math.pi / 256) - math.pi/2  # maps j to [-pi/2, 3pi/2]
+        angle = j * (2 * math.pi / 256) - math.pi / 2  # maps j to [-pi/2, 3pi/2]
         brightness = int((math.sin(angle) + 1) * 127.5)  # brightness goes from 0 to 255 to 0
-        
+
         current_colors = []
         for i in range(LED_COUNT):
             # Offset each LED's color phase to create a chasing effect
             offset = int((256 / LED_COUNT) * i)
             phase = (j + offset) % 256
-            
+
             # Interpolate blue channel: pink (blue = 0.5*brightness) to purple (blue = brightness)
             t = (math.sin(phase * (2 * math.pi / 256)) + 1) / 2
             red = brightness
@@ -104,10 +104,10 @@ def gentle_pulse():
             blue = int(brightness * (0.5 + 0.5 * t))
             current_colors.append((red, green, blue))
             strip.setPixelColor(i, Color(red, green, blue))
-        
+
         strip.show()
         time.sleep(0.02)
-        
+
         # Check for state changes; if detected, fade out current colors and exit cycle
         state = read_state()
         if not state or not state.get("message_pending"):
@@ -133,10 +133,10 @@ def active_pulse():
         if not state or not state.get("playing"):
             fade_out([(0, 0, 0)] * LED_COUNT)
             return
-        
+
         # Randomly choose between a pulse or a blink.
-        mode = random.choice(['pulse', 'blink'])
-        
+        mode = random.choice(["pulse", "blink"])
+
         # Generate random base colors for each LED.
         base_colors = []
         for i in range(LED_COUNT):
@@ -144,19 +144,19 @@ def active_pulse():
             g = random.randint(0, 255)
             b = random.randint(0, 255)
             base_colors.append((r, g, b))
-        
-        if mode == 'pulse':
+
+        if mode == "pulse":
             # Pulse mode: smooth fade in then fade out.
             duration = random.uniform(0.1, 0.5)  # total pulse duration
             steps = 30  # fixed number of steps for smooth transition
             delay = duration / steps
-            
+
             # For a smooth pulse, we use sine modulation from 0 to pi (0 -> 1 -> 0).
             current_colors = []
             for j in range(steps + 1):
                 angle = j * math.pi / steps  # angle in [0, pi]
                 brightness_factor = math.sin(angle)
-                
+
                 current_colors = []
                 for i in range(LED_COUNT):
                     r, g, b = base_colors[i]
@@ -167,7 +167,7 @@ def active_pulse():
                     strip.setPixelColor(i, Color(new_r, new_g, new_b))
                 strip.show()
                 time.sleep(delay)
-                
+
                 # Check for state changes during the pulse cycle.
                 state = read_state()
                 if not state or not state.get("playing"):
@@ -182,13 +182,14 @@ def active_pulse():
                 strip.setPixelColor(i, Color(r, g, b))
             strip.show()
             time.sleep(on_duration)
-            
+
             # Turn off LEDs.
             for i in range(LED_COUNT):
                 strip.setPixelColor(i, Color(0, 0, 0))
             strip.show()
             # Short off interval before the next cycle.
             time.sleep(0.05)
+
 
 def wifi_not_connected():
     """
@@ -198,6 +199,17 @@ def wifi_not_connected():
         strip.setPixelColor(i, Color(0, 255, 0))
     strip.show()
     time.sleep(1)
+
+
+def nightlight():
+    """
+    Sets all LEDs to amber (255, 191, 0) to act as a nightlight.
+    """
+    for i in range(LED_COUNT):
+        strip.setPixelColor(i, Color(255, 191, 0))
+    strip.show()
+    time.sleep(1)
+
 
 def orange_blink(current_state):
     """
@@ -211,7 +223,7 @@ def orange_blink(current_state):
             strip.setPixelColor(j, orange)
         strip.show()
         time.sleep(0.1)
-        
+
         # Turn LEDs off between blinks (except after the last blink)
         for j in range(LED_COUNT):
             strip.setPixelColor(j, Color(0, 0, 0))
@@ -219,6 +231,7 @@ def orange_blink(current_state):
         time.sleep(0.1)
     current_state["user_input"] = False
     write_state(current_state)
+
 
 def main():
     """
@@ -232,6 +245,9 @@ def main():
             continue
         if state.get("wifi_not_connected"):
             wifi_not_connected()
+            continue
+        if state.get("nightlight_on"):
+            nightlight()
             continue
         if not state.get("message_pending") and state.get("user_input"):
             orange_blink(state)
