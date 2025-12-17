@@ -13,7 +13,7 @@ from state_management.state_management import read_state, write_state
 import sys
 
 # Configuration
-POLL_INTERVAL_SECONDS = 10  # how often to poll the endpoint
+POLL_INTERVAL_SECONDS = 5  # how often to poll the endpoint
 PENDING_SLEEP_SECONDS = 1  # how long to wait for pending message to be cleared.
 GET_POST_ENDPOINT = "https://api.thinkkappi.com/vivi/get_post"
 DOWNLOAD_DIR = "/home/pi/mp3_downloads"  # change as needed
